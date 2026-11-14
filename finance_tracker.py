@@ -7,6 +7,30 @@ from pathlib import Path
 DATA_FILE = Path(__file__).with_name("finance_data.json")
 
 
+def parse_amount(value):
+    """Return a positive monetary amount with at most two decimal places."""
+    try:
+        amount = Decimal(str(value).strip().replace(",", ""))
+    except InvalidOperation as error:
+        raise ValueError("Enter a valid amount.") from error
+
+    if not amount.is_finite() or amount <= 0 or amount.as_tuple().exponent < -2:
+        raise ValueError("Amount must be positive with no more than 2 decimal places.")
+    return amount
+
+
+def parse_date(value):
+    """Validate an ISO date, defaulting an empty value to today's date."""
+    value = str(value).strip()
+    if not value:
+        return date.today().isoformat()
+    try:
+        parsed_date = datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError as error:
+        raise ValueError("Use a valid date in YYYY-MM-DD format.") from error
+    return parsed_date.isoformat()
+
+
 def load_transactions():
     if not DATA_FILE.exists():
         return []
@@ -28,26 +52,20 @@ def save_transactions(transactions):
 
 def read_amount(prompt):
     while True:
-        value = input(prompt).strip().replace(",", "")
+        value = input(prompt).strip()
         try:
-            amount = Decimal(value)
-        except InvalidOperation:
-            amount = Decimal("-1")
-
-        if amount > 0 and amount.as_tuple().exponent >= -2:
-            return float(amount)
-        print("Enter a positive amount with no more than 2 decimal places.")
+            return float(parse_amount(value))
+        except ValueError as error:
+            print(error)
 
 
 def read_date():
     while True:
-        value = input(f"Date [{date.today().isoformat()}]: ").strip()
-        if not value:
-            return date.today().isoformat()
+        value = input(f"Date [{date.today().isoformat()}]: ")
         try:
-            return datetime.strptime(value, "%Y-%m-%d").date().isoformat()
-        except ValueError:
-            print("Use the format YYYY-MM-DD.")
+            return parse_date(value)
+        except ValueError as error:
+            print(error)
 
 
 def add_transaction(transactions):

@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 finance_data.json
+*.csv
+.venv/
